@@ -2,12 +2,12 @@
 #Former Packager(s): Name <email@address.com>
 #Anything commented is optional and can be deleted
 
-pkgname=
-pkgver=
+PKGNAM=
+VERSION=
 pkgrel=
 #arch=noarch
 source=()
-#sourcetemplate=http://people.salixos.org/yournick/$pkgname/$pkgver/
+#sourcetemplate=http://people.salixos.org/yournick/$PKGNAM/$VERSION/
 #docs=("authors" "install" "readme" "copying")
 #url=
 #dotnew=()
@@ -26,6 +26,6 @@ slackdesc=\
 )
 
 build() {
-	cd $startdir/src/$pkgname-$pkgver
+	cd $startdir/src/$PKGNAM-$VERSION
 	python setup.py install --prefix=/usr --root=$startdir/pkg
 }

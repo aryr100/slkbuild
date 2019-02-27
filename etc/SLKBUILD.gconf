@@ -2,12 +2,12 @@
 #Former Packager(s): Name <email@address.com>
 #Anything commented out is optional and can be deleted.
 
-pkgname=
-pkgver=
+PKGNAM=
+VERSION=
 pkgrel=
 #arch=noarch
 source=()
-#sourcetemplate=http://people.salixos.org/yournick/$pkgname/$pkgver/
+#sourcetemplate=http://people.salixos.org/yournick/$PKGNAM/$VERSION/
 #docs=("readme" "install" "copying" "changelog" "authors" "news" "todo")
 #url=
 #dotnew=()
@@ -27,7 +27,7 @@ slackdesc=\
 
 
 build() {
-	cd $startdir/src/$pkgname-$pkgver
+	cd $startdir/src/$PKGNAM-$VERSION
 	./configure \
 		--prefix=/usr \
 		--libdir=/usr/lib${LIBDIRSUFFIX} \

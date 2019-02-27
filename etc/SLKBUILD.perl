@@ -6,12 +6,12 @@
 # For example: Archive-Zip
 # The corresponding package will be named: perl-Archive-Zip
 _cpanname=
-pkgname=perl-${_cpanname}
-pkgver=
+PKGNAM=perl-${_cpanname}
+VERSION=
 pkgrel=
 #arch=noarch
 source=()
-#sourcetemplate=http://people.salixos.org/yournick/$pkgname/$pkgver/
+#sourcetemplate=http://people.salixos.org/yournick/$pkgname/$VERSION/
 #docs=("readme" "install" "copying" "changelog" "authors" "news" "todo")
 #url=
 #dotnew=()
@@ -31,7 +31,7 @@ slackdesc=\
 
 
 build() {
-	cd $startdir/src/${_cpanname}-$pkgver
+	cd $startdir/src/${_cpanname}-$VERSION
 
 	perl Makefile.PL || exit 1
 	make OPTIMIZE="$CFLAGS" || exit 1
