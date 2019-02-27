@@ -1,176 +1,130 @@
-SLKBUILD
+slkbuild
 George Vlahavas
 %%mtime(%m/%d/%Y)
 
 %!target: man
 %!encoding: utf-8
-%!postproc(man): "^(\.TH.*) 1 "  "\1 5 "
+%!postproc(man): "^(\.TH.*) 1 "  "\1 8 "
 
 = NAME =
 
-SLKBUILD - slkbuild meta-file
+slkbuild - automated build script creation tool
+
+
+= SYNOPSIS =
+
+**slkbuild** [//OPTIONS//]
+
 
 = DESCRIPTION =
 
-**SLKBUILD**s are the meta-files fed to //slkbuild// during automatic
-build script creation. This manual page will give a run down of all the
-possible options that can be included in a **SLKBUILD** and an explanation
-of each.
+**slkbuild** is a script inspired by makepkg from arch which greatly
+simplifies the build process. It parses an easy to create //SLKBUILD//
+meta-file and from that creates a conventional build script that follows
+all of the slackware packaging standards that can be run on its own. See
+**SLKBUILD**(5) for details on how to create proper meta-files.
 
-= MANDATORY VARIABLES AND FUNCTIONS =
+The advantage of using slkbuild is that it ensures package uniformity
+and allows for an easy to edit meta-file in the event that one might
+require customization or might need to update the script for new
+releases. It also makes the buid process much quicker as downloading the
+source, untarring, gzipping man and info pages, stripping binaries,
+making sure on graphical applications that the menu entry is compliant
+as well as a host of other things are taken care of automatically
+freeing up time that would otherwise be consumed by these redundant
+tasks.
 
-: **pkgname**
-The name of the package. Per packaging standards, keep it all lowercase.
-: **pkgver**
-The version of the software. No dashes are allowed. For packages
-created from svn, you can use "r12345",
-if you checked out revision 12345. For cvs and git packages you
-can use the current date in the form YEARMONTHDAY, e.g.
-"20100115". Alpha and beta releases can be designated as such by
-appending the alpha or beta versions to the package, e.g.
-"1.0beta5" or "1.0b5", usually in the same way the source
-package is versioned, keeping in mind that no dashes are allowed.
-: **pkgrel**
-This is the release number of the package. A release number is the
-number of times this package has been created for this particular
-//pkgver//. So the first time you package a piece of software at a
-particular version, it is //pkgrel// 1, if you package it again at that
-exact same version perhaps to use different compile options or some
-other reason, it is //pkgrel// 2. However, if the package version changes,
-you go back to 1. So for example, software foo is at version 1.0
-and is packaged, so that is //pkgrel// 1. It is packaged again at
-version 1.0 because of bad //CXXFLAGS//, that one is called //pkgrel// 2.
-If the software advances to 2.0, and you package that, the //pkgrel//
-goes back to 1, and doesn't advance to 3. It's customary to append
-the packagers initials to the package release number when building
-packages that are not official Slackware packages, e.g. "1gv".
-: **source**
-This is an array for the source files needed to complete the build. This
-can be anything from a url to a tarball to a local personally created
-patch or .desktop file. If you have more than one, just put each one in
-quotes and make sure there is a space between them and make sure they
-are inside the parentheses. E.g.:
-``` source=("http://url.tar.gz" "gcc.path" "thing.desktop")
-For cvs, svn and git builds, this variable is not technically necessary,
-you can leave it empty and fetch the svn or cvs source in
-//build()//. Or you can create a source tarball from cvs, svn or git
-and use that in the source array.
-: **slackdesc**
-This is an array where you put the description of the software you are
-packaging. On the first line put the package name followed by a space a
-dash and another space and then a short description. On the following
-1-9 lines dependending on how much you need, put a longer explanation.
-Enclose each line in quotes and make sure each line is under 70
-characters, which can be ensured by following the handy ruler provided
-in the //SLKBUILD// prototype created by **slkbuild --generate**. For those
-used to skipping the second line of the slackdesc, the script does that
-automatically so go straight into the long explanation in the second
-line.
-: **build()**
-This is the function that is executed which actually does all the
-compiling. Before this function is ran, the path to the current
-directory is assigned the variable //$startdir// and then
-//$startdir/src// is
-created. After that anything specified in the //source=()// array is copied
-into //$startdir/src// and all tarballs are untarred. After that,
-//$startdir/pkg// is created. Then this function is run. So the aim of this
-function is to put whatever commands that are necessary, be it
-//./configure//,
-//make//, //make install DESTDIR=$startdir/pkg//, or any other
-combination of commands, to setup //$startdir/pkg// correctly.
-//$startdir/pkg//
-needs to be setup as if it is the / and so everything underneath goes
-where it is supposed to. If for instance, you are packaging something
-that you want to go in ///usr/bin/foo//, you would make sure it got to
-//$startdir/pkg/usr/bin/foo// in this function. The environment variable
-**numjobs**
-is used in //build()// to specify the default number of jobs make is going
-to use if "make -j $numjobs" is specified in //build()//.
+
+= OPTIONS =
+
+When run with no arguments, slkbuild sources the //SLKBUILD// meta-file
+in the current directory (the //SLKBUILD// file must be in the current
+directory), and creates a conventional //build-$pkgname.sh//
+script, which you can then inspect or do whatever with and then run.
+
+: **-g**, **--generate** [//prototype//]
+
+Copies over //SLKBUILD// prototypes stored in ///etc/slkbuild//. It
+optionally takes a prototype argument which allows for multiple
+prototypes to be stored. The prototype argument is the extension of the
+//SLKBUILD// prototype stored in ///etc/slkbuild//. For example, if you
+ran //slkbuild -g python//, ///etc/slkbuild/SLKBUILD.python// will be
+copied over, //slkbuild -g perl//, ///etc/slkbuild/SLKBUILD.perl// will
+be copied over etc. If called with no prototype argument,
+//slkbuild -g//, it moves over ///etc/slkbuild/SLKBUILD//.
+
+: **-x**, **--execute**
+Does everything that running it with no arguments would but afterwards
+actually executes the //build-$pkgname.sh// script. Remember that like
+running any build script, this option will require you to be root. This
+option does log the output of the build script's execution to
+//build-$pkgname.log// in the current directory.
+
+: **-c**, **--clean-dirs**
+Creates a //build-$pkgname.sh// script that, when it is run, will remove
+the //pkg// and //src// directories after building the package.
+
+
+: **-X**, **--x-and-clean**
+Same behaviour as **-x** and **-c** combined together. It additionally
+delete the //build-$pkgname.sh// script, after executing it to create
+the package.
+
+: **-h, --help**
+Displays a help dialog.
+
+: **-v**, **--version**
+Outputs the slkbuild version.
+
+
+= ENVIRONMENT VARIABLES =
+
+When executed, slkbuild will look for the following environment
+variables. If they have been specified, they will be used for creating
+the package.
+
 : **arch**
-The architecture of the build. You usually don't need to set this
-yourself, unless you want to create a "noarch" package. For 32-bit
-architectures, it will be automatically set to "i586" if not explicitly
-specified otherwise. For 64-bit architectures it will be automatically
-set to "x86_64". For ARM architectures it will be automatically set to
-"arm". This will automatically set the correct //CFLAGS// and
-//CXXFLAGS// in any case, "-O2 -march=$arch -mtune=i686" for 32-bits,
-//"-O2 -fPIC" for 64-bits and "-O2" for arm respectively. See also
-//CFLAGS/CXXFLAGS// below.
-: **docs**
-This is used in almost every package, but might possibly not be used.
-You fill in whatever documentation that comes with the package. Put:
-``` docs=("AUTHORS" "LICENSE" "Changelog")
-into this variable and these files
-will be moved over appropriately during the build to be included in
-the package. Don't worry about specifiying any path or the case of
-the docs because **slkbuild** does a case insensitive recursive search
-for whatever you provide. If you have more than one, do like I did
-above or like you do in source and put each doc in quotes with a
-space between them.
-: **options**
-This is an array that takes certain arguments and affects how the build
-script operates. The options it takes are //keepla//, //noextract//,
-//nostrip//, //noautodotnew//, //nosrcpack//, //nolinkprepend//, //txz//,
-//tgz//, //tlz//, //tbz// and //tbr//. //keepla//, will override the default
-behaviour of automatically removing libtool archives (.la files).
-//noextract// will prevent the build script from extracting tarballs
-automatically which is the default behavior. This is useful for
-those pesky tarbombs which explode all the contents into the
-current directory when extracted instead of its own dedicated
-directory and has some other potential uses. If you use this
-option, you must extract the tarballs yourself in //build()//.
-//nostrip// prevents the execution of the stripping function, can be
-useful in some applications, that break if they are stripped.
-//noautodotnew// is used to remove the automatic dotnew handling in
-all files in etc. //nosrcpack// will not include any source files in
-the resulting package, even if they are specified without a url
-in the source array. //nolinkprepend// will create the package by
-running makepkg without the **-p** switch, which is the default
-behaviour. The options //txz//, //tgz//, //tlz//, //tbz// and //tbr//
-set the compression format for the resulting package, the default
-being //txz//.
-If you set more than one of //txz//, //tgz//, //tlz//, //tbz// or
-//tbr//, only the first one will be used, whichever that is.
-: **sourcetemplate**
-This is a template to where the source will be put online (the ones that
-don't contain a full url). E.g.:
-``` sourcetemplate=http://yourepo.org/$pkgname/$pkgver
-If sourcetemplate is not set, an //.src// file will not be created.
-: **url**
-A homepage or some other information url about the software.
-: **dotnew**
-These are generally configuration files that you don't want to overwrite
-during install because they will mess up any configuration that the user
-installing the package already had setup. You put the path that they
-will be on the filesystem. So let's say you don't want ///etc/foo.conf// to
-be overwritten and you are packaging a new version of software foo. You
-put:
-``` dotnew=('etc/foo.conf')
-and that file in the package (in
-//$startdir/pkg//) will get moved to //foo.conf.new// and a test will be
-put in the //doint.sh// (script that runs after install) to see whether or
-not to move it over.
-: **CFLAGS/CXXFLAGS**
-The script already assigned appropriate flags for the project according
-the the specified architecture (see //arch// above), if for some reason
-those aren't the ones that you want, you can override them using these
-variables.
-: **doinst()**
-This is the script that runs after a package is installed, so put any
-commands in here that you wan't to be run after the package is
-installed.
-: **Custom Variables**
-Custom variables can also be added, so that they are used in the
-//build()// function. These variables should have a name that starts
-with an underscore.
+This will set the arch used for building the package. See also
+**SLKBUILD**(5).
+
+: **ARCH**
+Same effect as **arch**.
+
+: **MAKEPKG**
+If set, points to an alternative **makepkg** executable. If it is not
+set and if the standard **/sbin/makepkg** Slackware tool is not present,
+or if it is set to **makepkg_internal**, an internal implementation is
+used.
+
+: **numjobs**
+This will set the number of jobs used by make in the //build()//
+function of the SLKBUILD file. If not specified, the default value is
+//1//.
+
+: **PKGEXT**
+Sets the package type to use. Could be set to //txz//, //tgz//, //tlz//,
+//tbz// or //tbr//. This is overriden if any respective setting within
+the **SLKBUILD**(5) meta-file is set.
 
 
-== AUTHOR ==
+= WEBSITE =
 
-George Vlahavas <vlahavas~at~gmail~dot~com>.
+https://github.com/gapan/slkbuild
 
 
-== SEE ALSO ==
+= AUTHORS =
 
-**slkbuild**(8)
+slkbuild was forked from buildpkg by George Vlahavas
+<vlahavas~at~gmail~dot~com>.
 
+buildpkg was initially written by Matthew Bruenig
+<matthewbruenig~at~gmail~dot~com>.
+
+See the AUTHORS file for a list of other contributors.
+
+Report bugs or suggestions to //vlahavas~at~gmail~dot~com//.
+
+
+= SEE ALSO =
+
+**SLKBUILD**(5)
