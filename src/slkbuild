@@ -18,18 +18,18 @@ Usage: slkbuild [OPTIONS] [prototype]
 
 OPTIONS:
 
-  no option                   creates build-\$pkgname.sh
+  no option                   creates build-\$PKGNAM.sh
 
   -g, --generate [prototype]  copy a SLKBUILD prototype
 
-  -c, --clean-dirs            creates a build-\$pkgname.sh that will remove pkg and src directories
-  
-  -x, --execute               creates build-\$pkgname.sh, then executes it
+  -c, --clean-dirs            creates a build-\$PKGNAM.sh that will remove pkg and src directories
+
+  -x, --execute               creates build-\$PKGNAM.sh, then executes it
 
   -X, --x-and-clean           combines -x and -c together
-    
+
   -v, --version               outputs the version
-  
+
   -h, --help                  display this message
 
 Report bugs or suggestions to <vlahavas~at~gmail~dot~com>.
@@ -165,7 +165,7 @@ fi
 
 #Source the SLKBUILD script
 if [ -f "${startdir}/SLKBUILD" ]; then
-    unset pkgname pkgver pkgrel source extradepends options \
+    unset PKGNAM VERSION pkgrel source extradepends options \
           dotnew url CFLAGS CXXFLAGS SLKCFLAGS LIBDIRSUFFIX \
           slackdesc doinst build docs sourcetemplate
     . ${startdir}/SLKBUILD
@@ -175,7 +175,7 @@ fi
 
 ##################Sanity Tests Begin######################################
 #Check that variables exist
-for VAR in pkgname pkgver pkgrel slackdesc; do
+for VAR in PKGNAM VERSION pkgrel slackdesc; do
     [[ ! "${!VAR}" ]] &&
         err "variable \"${VAR}\" is not set"
 done
@@ -192,8 +192,8 @@ fi
     err "No build() function found"
 
 #check that variables are sane
-[[ "$(echo $pkgver | grep -E '\-')" ]] &&
-        err "No dashes allowed in pkgver"
+[[ "$(echo $VERSION | grep -E '\-')" ]] &&
+        err "No dashes allowed in VERSION"
 
 [[ "${slackdesc[10]}" ]] &&
     err "No more than 10 lines allowed in slackdesc"
@@ -220,7 +220,7 @@ for SOURCES in "${source[@]}"; do
                 echo "Download failed"
                 rm -f $file
                 exit 2
-            fi 
+            fi
         else
             err "$SOURCES does not appear to be a url nor is it in the directory"
         fi
@@ -313,47 +313,47 @@ if [ -n "$options" ]; then
 fi
 
 #######Generate Build Script#####################################
-cat <<EOA > ${startdir}/build-${pkgname}.sh
+cat <<EOA > ${startdir}/build-${PKGNAM}.sh
 #!/bin/bash
 #Automatically Created by slkbuild $slkbuildver
 EOA
 if [ "$(grep -e "^#Maintainer\|^#Packager" $startdir/SLKBUILD)" ]; then
-    grep -e "^#Maintainer\|^#Packager" $startdir/SLKBUILD >> $startdir/build-$pkgname.sh
+    grep -e "^#Maintainer\|^#Packager" $startdir/SLKBUILD >> $startdir/build-$PKGNAM.sh
 fi
 [[ "$(grep -e "^#Former Maintainer(s)\|^#Former Packager(s)" $startdir/SLKBUILD)" ]] &&
-    grep -e "^#Former Maintainer(s)\|^#Former Packager(s)" $startdir/SLKBUILD >> $startdir/build-$pkgname.sh
-[[ "$url" ]] && echo "#url: $url" >> $startdir/build-$pkgname.sh
+    grep -e "^#Former Maintainer(s)\|^#Former Packager(s)" $startdir/SLKBUILD >> $startdir/build-$PKGNAM.sh
+[[ "$url" ]] && echo "#url: $url" >> $startdir/build-$PKGNAM.sh
 
 ##########Variables START
-cat <<EOVARIABLES >>$startdir/build-$pkgname.sh
+cat <<EOVARIABLES >>$startdir/build-$PKGNAM.sh
 
 ###Variables
 startdir=\$(pwd)
 SRC=\$startdir/src
 PKG=\$startdir/pkg
 
-pkgname=$pkgname
-pkgver=$pkgver
+PKGNAM=$PKGNAM
+VERSION=$VERSION
 pkgrel=$pkgrel
 arch=$arch
 numjobs=${numjobs:-1}
-package=\$pkgname-\$pkgver-\$arch-$pkgrel
+package=\$PKGNAM-\$VERSION-\$arch-$pkgrel
 EOVARIABLES
 
-grep -e "^_[a-zA-Z]*=[a-zA-Z]*" $startdir/SLKBUILD >> $startdir/build-$pkgname.sh
+grep -e "^_[a-zA-Z]*=[a-zA-Z]*" $startdir/SLKBUILD >> $startdir/build-$PKGNAM.sh
 for (( I=0; I < ${#source[@]} ; I++)); do
         source[$I]="\"${source[$I]}\""
 done
-echo "source=(${source[@]})" >> $startdir/build-$pkgname.sh
+echo "source=(${source[@]})" >> $startdir/build-$PKGNAM.sh
 if [[ ! -z $sourcetemplate ]]; then
     if [ ${sourcetemplate: -1} == "/" ]; then
         tmpsource=$(echo $sourcetemplate | rev);
-        echo "sourcetemplate=$(echo ${tmpsource:1} | rev)" >> $startdir/build-$pkgname.sh
+        echo "sourcetemplate=$(echo ${tmpsource:1} | rev)" >> $startdir/build-$PKGNAM.sh
     else
-        echo "sourcetemplate=$sourcetemplate" >> $startdir/build-$pkgname.sh
+        echo "sourcetemplate=$sourcetemplate" >> $startdir/build-$PKGNAM.sh
     fi
 fi
-echo "docs=(${docs[@]})" >> $startdir/build-$pkgname.sh
+echo "docs=(${docs[@]})" >> $startdir/build-$PKGNAM.sh
 
 if [ $arch == "x86_64" ]; then
     CFLAGS=${CFLAGS:-"-O2 -fPIC"}
@@ -379,7 +379,7 @@ fi
 ARCH=$arch
 
 for FLAGS in CFLAGS CXXFLAGS SLKCFLAGS LIBDIRSUFFIX ARCH; do
-    echo "export $FLAGS=\"${!FLAGS}\"" >>$startdir/build-$pkgname.sh
+    echo "export $FLAGS=\"${!FLAGS}\"" >>$startdir/build-$PKGNAM.sh
 done
 
 ##########Variables END
@@ -389,7 +389,7 @@ cat <<"EOREDUNDANT" | \
     sed "s|__MAKEPKG__|$MAKEPKG|g" | \
     sed "s|__LINKPREPEND__|$LINKPREPEND|g" | \
     sed "s|__PKGEXT__|$PKGEXT|g" \
-    >> $startdir/build-$pkgname.sh
+    >> $startdir/build-$PKGNAM.sh
 
 ######Begin Redundant Code######################################
 check_for_root() {
@@ -486,8 +486,8 @@ set_post_permissions() {
 }
 
 copy_build_script() {
-    mkdir -p $startdir/pkg/usr/src/$pkgname-$pkgver/
-    [ -f $startdir/SLKBUILD ] && cp $startdir/SLKBUILD    $startdir/pkg/usr/src/$pkgname-$pkgver/SLKBUILD
+    mkdir -p $startdir/pkg/usr/src/$PKGNAM-$VERSION/
+    [ -f $startdir/SLKBUILD ] && cp $startdir/SLKBUILD    $startdir/pkg/usr/src/$PKGNAM-$VERSION/SLKBUILD
 }
 
 create_package() {
@@ -505,7 +505,7 @@ EOREDUNDANT
 #makepkg_internal() function is taken from the fmakepkg() function by
 #ruario: https://gist.github.com/ruario/9672717
 if [[ $MAKEPKG = "makepkg_internal" ]]; then
-cat <<"EOMAKEPKG" >> $startdir/build-$pkgname.sh
+cat <<"EOMAKEPKG" >> $startdir/build-$PKGNAM.sh
 makepkg_internal() {
 
   # Handle Slackware's makepkg options
@@ -564,7 +564,7 @@ EOMAKEPKG
 fi
 
 if [ -z "$NOSTRIP" ]; then
-cat <<"EOREDUNDANT1" >> $startdir/build-$pkgname.sh
+cat <<"EOREDUNDANT1" >> $startdir/build-$PKGNAM.sh
 strip_binaries() {
     cd $startdir/pkg
     find . -print0 | \
@@ -577,18 +577,18 @@ strip_binaries() {
 EOREDUNDANT1
 fi
 
-cat <<"EOREDUNDANT2" >> $startdir/build-$pkgname.sh
+cat <<"EOREDUNDANT2" >> $startdir/build-$PKGNAM.sh
 #########End Redundant Code#####################################
 #########Begin Non Redundant Code##############################
 
 EOREDUNDANT2
 
 if [[ "$source" ]]; then
-cat <<EOPREPAREDIRECTORY >>$startdir/build-$pkgname.sh
+cat <<EOPREPAREDIRECTORY >>$startdir/build-$PKGNAM.sh
 prepare_directory() {
     NOSRCPACK="$NOSRCPACK"
     mkdir \$startdir/src
-    mkdir -p \$startdir/pkg/usr/src/\$pkgname-\$pkgver
+    mkdir -p \$startdir/pkg/usr/src/\$PKGNAM-\$VERSION
     for SOURCES in \${source[@]}; do
         protocol=\$(echo \$SOURCES | sed 's|:.*||')
             file=\$(basename \$SOURCES | awk -F= '{print \$NF}')
@@ -599,7 +599,7 @@ prepare_directory() {
                 if [ ! "\$?" == "0" ]; then
                     echo "Download failed"
                     exit 2
-                fi 
+                fi
             else
                 echo "\$SOURCES does not appear to be a url nor is it in the directory"
                 exit 2
@@ -608,7 +608,7 @@ prepare_directory() {
         cp -LR \$file \$startdir/src
         if ! [ "\$protocol" = "http" -o "\$protocol" = "https" -o "\$protocol" = "ftp" ]; then
             if ! [[ \$NOSRCPACK -eq 1 ]]; then
-                cp -LR \$startdir/\$(basename \$SOURCES) \$startdir/pkg/usr/src/\$pkgname-\$pkgver/
+                cp -LR \$startdir/\$(basename \$SOURCES) \$startdir/pkg/usr/src/\$PKGNAM-\$VERSION/
             fi
         fi
     done
@@ -617,7 +617,7 @@ prepare_directory() {
 EOPREPAREDIRECTORY
 
 else
-cat <<"EOPREPAREDIRECTORY" >>$startdir/build-$pkgname.sh
+cat <<"EOPREPAREDIRECTORY" >>$startdir/build-$PKGNAM.sh
 prepare_directory() {
     mkdir $startdir/src
     mkdir $startdir/pkg
@@ -627,10 +627,10 @@ EOPREPAREDIRECTORY
 fi
 
 if [ -z "$NOEXTRACT" ]; then
-cat <<EOEXTRACTSOURCES >>$startdir/build-$pkgname.sh
+cat <<EOEXTRACTSOURCES >>$startdir/build-$PKGNAM.sh
 extract_source() {
     cd \$startdir/src
-    if [[ "\$(ls \$startdir/src)" ]]; then    
+    if [[ "\$(ls \$startdir/src)" ]]; then
         for FILES in \${source[@]}; do
                 FILES="\$(basename \$FILES | awk -F= '{print \$NF}')"
             file_type=\$(file -biLz "\$FILES")
@@ -669,31 +669,31 @@ extract_source() {
 EOEXTRACTSOURCES
 fi
 
-declare -f build >> $startdir/build-$pkgname.sh
+declare -f build >> $startdir/build-$PKGNAM.sh
 
-cat <<EOM >>$startdir/build-$pkgname.sh
+cat <<EOM >>$startdir/build-$PKGNAM.sh
 
 create_slackdesc() {
 mkdir \$startdir/pkg/install
 cat <<"EODESC" >\$startdir/pkg/install/slack-desc
-$pkgname: ${slackdesc[0]}
-$pkgname: 
-$pkgname: ${slackdesc[1]}
-$pkgname: ${slackdesc[2]}
-$pkgname: ${slackdesc[3]}
-$pkgname: ${slackdesc[4]}
-$pkgname: ${slackdesc[5]}
-$pkgname: ${slackdesc[6]}
-$pkgname: ${slackdesc[7]}
-$pkgname: ${slackdesc[8]}
-$pkgname: ${slackdesc[9]}
+$PKGNAM: ${slackdesc[0]}
+$PKGNAM:
+$PKGNAM: ${slackdesc[1]}
+$PKGNAM: ${slackdesc[2]}
+$PKGNAM: ${slackdesc[3]}
+$PKGNAM: ${slackdesc[4]}
+$PKGNAM: ${slackdesc[5]}
+$PKGNAM: ${slackdesc[6]}
+$PKGNAM: ${slackdesc[7]}
+$PKGNAM: ${slackdesc[8]}
+$PKGNAM: ${slackdesc[9]}
 EODESC
 }
 
 EOM
 
 if [[ "$dotnew" ]]; then
-    cat<<EOP >>$startdir/build-${pkgname}.sh
+    cat<<EOP >>$startdir/build-${PKGNAM}.sh
 setup_dotnew() {
     for files in ${dotnew[@]} ; do
         fullfile="\${startdir}/pkg/\${files}"
@@ -718,9 +718,9 @@ dotnew() {
 EOP
 
 for i in ${dotnew[@]}; do
-echo "dotnew $i" >> $startdir/build-$pkgname.sh
+echo "dotnew $i" >> $startdir/build-$PKGNAM.sh
 done
-cat <<"EOQ" >>$startdir/build-$pkgname.sh
+cat <<"EOQ" >>$startdir/build-$PKGNAM.sh
 EODOTNEW
 }
 
@@ -728,34 +728,34 @@ EOQ
 fi
 
 if [[ "$(grep '^doinst\(\)' $startdir/SLKBUILD)" ]]; then
-    echo 'setup_doinst() {' >> $startdir/build-$pkgname.sh
+    echo 'setup_doinst() {' >> $startdir/build-$PKGNAM.sh
     echo 'cat <<"EODOINST" >>$startdir/pkg/install/doinst.sh' \
-        >>$startdir/build-$pkgname.sh
+        >>$startdir/build-$PKGNAM.sh
     declare -f doinst | \
-        sed "s/\$pkgname\|\${pkgname}/$pkgname/g" | \
-        sed "s/\$pkgver\|\${pkgver}/$pkgver/g" | \
+        sed "s/\$PKGNAM\|\${PKGNAM}/$PKGNAM/g" | \
+        sed "s/\$VERSION\|\${VERSION}/$VERSION/g" | \
         sed "s/\$arch\|\${arch}\|\$ARCH\|\${ARCH}/$arch/g" | \
         sed "s/\$LIBDIRSUFFIX\|\${LIBDIRSUFFIX}/$LIBDIRSUFFIX/g" \
-        >>$startdir/build-$pkgname.sh
-    echo 'doinst' >>$startdir/build-$pkgname.sh
-    echo 'EODOINST' >>$startdir/build-$pkgname.sh
-    echo -e '}\n' >>$startdir/build-$pkgname.sh
+        >>$startdir/build-$PKGNAM.sh
+    echo 'doinst' >>$startdir/build-$PKGNAM.sh
+    echo 'EODOINST' >>$startdir/build-$PKGNAM.sh
+    echo -e '}\n' >>$startdir/build-$PKGNAM.sh
 fi
 
 if [[ "$docs" ]]; then
-cat <<EOEXTRADOCS >> $startdir/build-$pkgname.sh
+cat <<EOEXTRADOCS >> $startdir/build-$PKGNAM.sh
 copy_docs() {
     for stuff in \${docs[@]}; do
-        if [ ! -d "\$startdir/pkg/usr/doc/\$pkgname-\$pkgver" ]; then
-            mkdir -p \$startdir/pkg/usr/doc/\$pkgname-\$pkgver
+        if [ ! -d "\$startdir/pkg/usr/doc/\$PKGNAM-\$VERSION" ]; then
+            mkdir -p \$startdir/pkg/usr/doc/\$PKGNAM-\$VERSION
         fi
-        find \$startdir/src -type f -iname "\$stuff" -exec cp -LR '{}' \$startdir/pkg/usr/doc/\$pkgname-\$pkgver \;
+        find \$startdir/src -type f -iname "\$stuff" -exec cp -LR '{}' \$startdir/pkg/usr/doc/\$PKGNAM-\$VERSION \;
     done
 }
 EOEXTRADOCS
 fi
 
-cat <<SRCFILE>>$startdir/build-$pkgname.sh
+cat <<SRCFILE>>$startdir/build-$PKGNAM.sh
 create_source_file(){
     [ -f \$package.src ] && rm \$package.src
     if [ ! -z \$sourcetemplate ]; then
@@ -776,11 +776,11 @@ create_source_file(){
 }
 SRCFILE
 
-cat <<POSTCHECKS>>$startdir/build-$pkgname.sh
+cat <<POSTCHECKS>>$startdir/build-$PKGNAM.sh
 post_checks(){
     # Ideas taken from src2pkg :)
-    if [ -d "\$startdir/pkg/usr/doc/\$pkgname-\$pkgver" ]; then
-        for DIRS in usr/doc/\$pkgname-\$pkgver usr/doc; do
+    if [ -d "\$startdir/pkg/usr/doc/\$PKGNAM-\$VERSION" ]; then
+        for DIRS in usr/doc/\$PKGNAM-\$VERSION usr/doc; do
             cd \$startdir/pkg/\$DIRS
             if [[ \$(find . -type f) = "" ]] ; then
                 cd ..
@@ -789,8 +789,8 @@ post_checks(){
         done
     fi
     # if the docs weren't deleted ...
-    if [ -d "\$startdir/pkg/usr/doc/\$pkgname-\$pkgver" ]; then
-        cd \$startdir/pkg/usr/doc/\$pkgname-\$pkgver
+    if [ -d "\$startdir/pkg/usr/doc/\$PKGNAM-\$VERSION" ]; then
+        cd \$startdir/pkg/usr/doc/\$PKGNAM-\$VERSION
         #remove zero length files
         if [[ \$(find . -type f -size 0) ]]; then
             echo "Removing some zero lenght files"
@@ -814,7 +814,7 @@ POSTCHECKS
 
 # add files in etc to dotnew (if it wasn't defined)
 if [[ -z $NOAUTODOTNEW ]] && [[ -z $dotnew ]]; then
-cat <<NOAUTODOTNEW>>$startdir/build-$pkgname.sh        
+cat <<NOAUTODOTNEW>>$startdir/build-$PKGNAM.sh
     if [ -d \$startdir/pkg/etc ]; then
         cd \$startdir/pkg/
         for conf in \$(find ./etc -type f) ; do
@@ -850,22 +850,22 @@ done
 fi
 NOAUTODOTNEW
 fi
-cat <<ENDPOSTCHECK >>$startdir/build-$pkgname.sh
+cat <<ENDPOSTCHECK >>$startdir/build-$PKGNAM.sh
 }
 
 ####End Non Redundant Code############################
 ENDPOSTCHECK
 
 
-cat <<"EOEXECUTION1" >> $startdir/build-$pkgname.sh
+cat <<"EOEXECUTION1" >> $startdir/build-$PKGNAM.sh
 #Execution
 
 check_for_root
 clean_old_builds
 prepare_directory
 EOEXECUTION1
-[ -z "$NOEXTRACT" ] && echo "extract_source" >>$startdir/build-$pkgname.sh
-cat <<"EOEXECUTION2">>$startdir/build-$pkgname.sh
+[ -z "$NOEXTRACT" ] && echo "extract_source" >>$startdir/build-$PKGNAM.sh
+cat <<"EOEXECUTION2">>$startdir/build-$PKGNAM.sh
 set_pre_permissions
 build
 if [ ! "$?" = "0" ]; then
@@ -876,37 +876,36 @@ create_slackdesc
 post_checks
 EOEXECUTION2
 
-[[ "$dotnew" ]] && echo "setup_dotnew" >>$startdir/build-$pkgname.sh
-[[ "$(grep '^doinst\(\)' $startdir/SLKBUILD)" ]] && echo "setup_doinst" >>$startdir/build-$pkgname.sh
-[[ "$docs" ]] && echo "copy_docs" >>$startdir/build-$pkgname.sh
+[[ "$dotnew" ]] && echo "setup_dotnew" >>$startdir/build-$PKGNAM.sh
+[[ "$(grep '^doinst\(\)' $startdir/SLKBUILD)" ]] && echo "setup_doinst" >>$startdir/build-$PKGNAM.sh
+[[ "$docs" ]] && echo "copy_docs" >>$startdir/build-$PKGNAM.sh
 [[ $KEEPLA -ne 1 ]] && echo "remove_libtool_archives" >> \
-   $startdir/build-$pkgname.sh
+   $startdir/build-$PKGNAM.sh
 
-[ -z "$NOSTRIP" ] && echo "strip_binaries" >>$startdir/build-$pkgname.sh
-cat <<"EOEXECUTION32" >> $startdir/build-$pkgname.sh
+[ -z "$NOSTRIP" ] && echo "strip_binaries" >>$startdir/build-$PKGNAM.sh
+cat <<"EOEXECUTION32" >> $startdir/build-$PKGNAM.sh
 gzip_man_and_info_pages
 set_post_permissions
 copy_build_script
 create_package
 create_source_file
 EOEXECUTION32
-cat <<"EOEXECUTION31" >> $startdir/build-$pkgname.sh
+cat <<"EOEXECUTION31" >> $startdir/build-$PKGNAM.sh
 echo "Package has been built."
 EOEXECUTION31
 if [ "$REMOVEDIRS" == "1" ]; then
-    echo 'echo "Cleaning pkg and src directories"' >> $startdir/build-$pkgname.sh
-    echo "clean_dirs" >> $startdir/build-$pkgname.sh
+    echo 'echo "Cleaning pkg and src directories"' >> $startdir/build-$PKGNAM.sh
+    echo "clean_dirs" >> $startdir/build-$PKGNAM.sh
 fi
 
-chmod +x $startdir/build-$pkgname.sh
-echo "build-$pkgname.sh has been created"
+chmod +x $startdir/build-$PKGNAM.sh
+echo "build-$PKGNAM.sh has been created"
 if [ "$EXECUTE" == "1" ]; then
-    ./build-$pkgname.sh 2>&1 | tee build-$pkgname-$pkgver-$arch-$pkgrel.log
+    ./build-$PKGNAM.sh 2>&1 | tee build-$PKGNAM-$VERSION-$arch-$pkgrel.log
     retval=${PIPESTATUS[0]}
     if [ "$REMOVEDIRS" == "1" ];then
-        rm ./build-$pkgname.sh
+        rm ./build-$PKGNAM.sh
     fi
 fi
 
 exit $retval
-
